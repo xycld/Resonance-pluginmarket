@@ -1,0 +1,40 @@
+name: Update Plugins
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+  push:
+    branches: [main]
+    paths: ['plugins-list/**']
+
+concurrency:
+  group: update-plugins
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: cd scripts && npm ci
+
+      - name: Update star count
+        run: cd scripts && node get-star-count.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for plugin updates
+        run: cd scripts && node update-plugins.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
