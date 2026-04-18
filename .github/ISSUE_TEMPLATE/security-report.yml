@@ -1,0 +1,22 @@
+name: Security Report
+about: 举报插件安全漏洞
+title: '[Security] '
+labels: security
+body:
+  - type: input
+    id: plugin
+    attributes:
+      label: 插件名称
+      description: 受影响的插件 name
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: 漏洞描述
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
