@@ -4,9 +4,25 @@ import { fileURLToPath } from 'url'
 import Ajv from 'ajv'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const schema = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../manifest-schema.json'), 'utf-8'))
+
+let schema
+let validate
+
+try {
+  const schemaContent = fs.readFileSync(path.resolve(__dirname, '../manifest-schema.json'), 'utf-8')
+  schema = JSON.parse(schemaContent)
+} catch (err) {
+  console.error(`❌ Failed to load manifest schema: ${err.message}`)
+  process.exit(1)
+}
+
 const ajv = new Ajv({ strict: false })
-const validate = ajv.compile(schema)
+try {
+  validate = ajv.compile(schema)
+} catch (err) {
+  console.error(`❌ Failed to compile schema: ${err.message}`)
+  process.exit(1)
+}
 
 const FORBIDDEN_PATTERNS = [
   /\beval\s*\(/,
@@ -14,12 +30,21 @@ const FORBIDDEN_PATTERNS = [
   /\brequire\s*\(\s*['"]fs['"]\s*\)/,
   /\brequire\s*\(\s*['"]os['"]\s*\)/,
   /\brequire\s*\(\s*['"]path['"]\s*\)/,
+  /\brequire\s*\(\s*['"]node:fs['"]\s*\)/,
+  /\brequire\s*\(\s*['"]node:os['"]\s*\)/,
+  /\brequire\s*\(\s*['"]node:path['"]\s*\)/,
   /\bdocument\.write\s*\(/,
   /\.innerHTML\s*=/,
 ]
 
 function validateManifest(manifestPath) {
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
+  let manifest
+  try {
+    const content = fs.readFileSync(manifestPath, 'utf-8')
+    manifest = JSON.parse(content)
+  } catch (err) {
+    return { ok: false, errors: [`Failed to read or parse manifest.json: ${err.message}`] }
+  }
   const valid = validate(manifest)
   if (!valid) {
     return { ok: false, errors: validate.errors.map(e => `${e.instancePath || 'root'}: ${e.message}`) }
@@ -29,13 +54,23 @@ function validateManifest(manifestPath) {
 
 function scanCode(dir) {
   const errors = []
-  const files = fs.readdirSync(dir)
-  for (const file of files) {
-    if (!file.endsWith('.js')) continue
-    const content = fs.readFileSync(path.join(dir, file), 'utf-8')
-    for (const pattern of FORBIDDEN_PATTERNS) {
-      if (pattern.test(content)) {
-        errors.push(`Forbidden pattern in ${file}: ${pattern.source}`)
+  const entries = fs.readdirSync(dir, { withFileTypes: true })
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      errors.push(...scanCode(fullPath))
+    } else if (entry.isFile() && /\.(js|mjs|cjs)$/i.test(entry.name)) {
+      let content
+      try {
+        content = fs.readFileSync(fullPath, 'utf-8')
+      } catch (err) {
+        errors.push(`Failed to read ${fullPath}: ${err.message}`)
+        continue
+      }
+      for (const pattern of FORBIDDEN_PATTERNS) {
+        if (pattern.test(content)) {
+          errors.push(`Forbidden pattern in ${fullPath}: ${pattern.source}`)
+        }
       }
     }
   }
