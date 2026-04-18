@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "demo-plugin",
+  "version": "1.0.0",
+  "description": "A demo plugin",
+  "author": "Demo Author",
+  "permissions": ["network"],
+  "hooks": [],
+  "providers": [],
+  "entry": "index.js",
+  "api_version": "3.0"
+}
