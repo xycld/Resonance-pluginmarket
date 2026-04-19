@@ -497,22 +497,40 @@ module.exports = function (ctx) {
               }
             })
             .then(function () {
+              // Embed metadata into audio file before importing
+              if (ctx.library.writeMetadata) {
+                var coverPromise = Promise.resolve('')
+                if (song.cover) {
+                  coverPromise = ctx.fetch(song.cover)
+                    .then(function (res) { return res.body })
+                    .then(function (buf) {
+                      var bytes = new Uint8Array(buf)
+                      var binary = ''
+                      for (var i = 0; i < bytes.length; i++) {
+                        binary += String.fromCharCode(bytes[i])
+                      }
+                      return btoa(binary)
+                    })
+                    .catch(function () { return '' })
+                }
+                return coverPromise.then(function (coverBase64) {
+                  return ctx.library.writeMetadata('downloads/' + filename, {
+                    title: song.name,
+                    artist: song.artists.join(' / '),
+                    album: song.album || '',
+                    coverBase64: coverBase64,
+                  })
+                })
+              }
+            })
+            .then(function () {
               // Import downloaded files into app library
               if (ctx.library.importToLibrary) {
                 var filesToImport = [{ relativePath: 'downloads/' + filename, type: 'audio' }]
                 if (info.lrc) {
                   filesToImport.push({ relativePath: 'downloads/' + safeName + ' - ' + safeArtist + '.lrc', type: 'lyrics' })
                 }
-                // Build metadata sidecar for accurate library display
-                var metadata = {}
-                metadata[filename] = {
-                  title: song.name,
-                  artist: song.artists.join(', '),
-                  album: song.album || '',
-                  cover: song.cover || '',
-                  duration: song.duration ? formatDuration(song.duration) : '',
-                }
-                return ctx.library.importToLibrary(filesToImport, metadata).then(function () {
+                return ctx.library.importToLibrary(filesToImport).then(function () {
                   // Clean up plugin directory copies after import
                   ctx.fs.remove('downloads/' + filename).catch(function () {})
                   if (info.lrc) {
@@ -552,7 +570,6 @@ module.exports = function (ctx) {
         width: '100%', maxWidth: '800px', margin: '0 auto',
         padding: '100px 20px 40px', minHeight: '100vh',
         display: 'flex', flexDirection: 'column', gap: '16px',
-        overflow: 'auto',
       },
     },
       // Title bar
