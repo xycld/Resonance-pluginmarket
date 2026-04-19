@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_updated": "2026-04-19T09:30:46.339Z",
+  "last_updated": "2026-04-19T13:04:58.834Z",
   "plugins": [
     {
       "name": "demo-plugin",
@@ -15,8 +15,8 @@
       "has_ui": false,
       "download_url": "plugins-data/demo-plugin/demo-plugin-1.0.0.zip",
       "stars": 0,
-      "size": 599,
-      "sha256": "97815d67a1b1a496a1d8969e14b7e37d5c1911c82e38db451e3ec40da9c43341",
+      "size": 595,
+      "sha256": "fd1bce42ce5226a8bb3e879117ee1458b18d049a1b281e73fa521c29d5b1e969",
       "providers": [],
       "entry": "index.js"
     },
@@ -27,7 +27,8 @@
       "author": "EZsinging",
       "permissions": [
         "storage",
-        "network"
+        "network",
+        "fs"
       ],
       "hooks": [],
       "api_version": "3.0",
@@ -35,8 +36,8 @@
       "download_url": "plugins-data/music-get/music-get-1.0.0.zip",
       "source_repo": "https://github.com/xycld/Resonance-music-get",
       "stars": 0,
-      "size": 5490,
-      "sha256": "6989d364e8ea9306b824e29c210c5c4830455fca0dbd84b448fdff7b13e56456",
+      "size": 9666,
+      "sha256": "94d3b218c27e9ca4a990a51c38eea116ae28f63f6d5c79a760859b15302fe71e",
       "providers": [],
       "entry": "index.js",
       "ui_entry": "ui.js"

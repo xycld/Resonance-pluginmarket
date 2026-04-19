@@ -200,18 +200,20 @@ module.exports = function (ctx) {
       cleanup()
       setStatus('loading')
       setSession(null)
-      window.ez.musicGet.createQrLogin('netease').then(function (s) {
+      ctx.hooks.dispatch('musicGet:qrLogin', { provider: 'netease' }).then(function (res) {
+        var s = res.data.session
         setSession(s)
         setStatus('waiting')
         // Start polling
         pollRef.current = setInterval(function () {
-          window.ez.musicGet.pollQrLogin(s).then(function (result) {
+          ctx.hooks.dispatch('musicGet:pollQrLogin', { session: s }).then(function (res) {
+            var result = res.data.result
             if (result.status === 'scanned') setStatus('scanned')
             else if (result.status === 'success') {
               cleanup()
               setStatus('success')
               if (result.cookie) {
-                window.ez.musicGet.setCookie('netease', result.cookie)
+                ctx.hooks.dispatch('musicGet:setCookie', { provider: 'netease', cookie: result.cookie })
               }
               setTimeout(function () { props.onClose() }, 1500)
             } else if (result.status === 'expired') {
@@ -329,8 +331,9 @@ module.exports = function (ctx) {
       setLoading(true)
       setResults([])
       setDlStates({})
-      window.ez.musicGet.search(keyword.trim(), { limit: 20 })
-        .then(function (res) {
+      ctx.hooks.dispatch('musicGet:search', { keyword: keyword.trim(), limit: 20 })
+        .then(function (result) {
+          var res = result.data.results || []
           // Flatten results from all providers
           var allSongs = []
           res.forEach(function (r) {
@@ -350,28 +353,53 @@ module.exports = function (ctx) {
         next[key] = 'loading'
         return next
       })
-      var libraryDir = settingsStore.getState().libraryDir
-      window.ez.musicGet.downloadToLibrary(song, libraryDir, quality)
+
+      // Step 1: Get download info from backend
+      ctx.hooks.dispatch('musicGet:download', { song: song, quality: quality })
         .then(function (result) {
-          if (result) {
-            setDlStates(function (prev) {
-              var next = {}
-              for (var k in prev) next[k] = prev[k]
-              next[key] = 'done'
-              return next
-            })
-            // Trigger library rescan
-            ctx.library.rescan()
-          } else {
-            setDlStates(function (prev) {
-              var next = {}
-              for (var k in prev) next[k] = prev[k]
-              next[key] = 'error'
-              return next
-            })
+          var info = result.data
+          if (!info || !info.audioUrl) {
+            throw new Error('No audio URL available')
           }
+
+          // Step 2: Fetch audio data
+          return fetch(info.audioUrl)
+            .then(function (res) { return res.arrayBuffer() })
+            .then(function (audioData) {
+              // Step 3: Save to plugin downloads directory
+              var ext = info.format || 'mp3'
+              var safeName = song.name.replace(/[\\/:*?"<>|]/g, '_').trim()
+              var safeArtist = song.artists.join(', ').replace(/[\\/:*?"<>|]/g, '_').trim()
+              var filename = safeName + ' - ' + safeArtist + '.' + ext
+
+              return ctx.fs.mkdir('downloads')
+                .catch(function () { /* dir may already exist */ })
+                .then(function () {
+                  return ctx.fs.writeFile('downloads/' + filename, new Uint8Array(audioData))
+                })
+                .then(function () {
+                  // Step 4: Save lyrics if available
+                  if (info.lrc) {
+                    var lrcFilename = safeName + ' - ' + safeArtist + '.lrc'
+                    var lrcContent = info.lrc
+                    if (info.translatedLrc) {
+                      lrcContent += '\n\n' + info.translatedLrc
+                    }
+                    return ctx.fs.writeFile('downloads/' + lrcFilename, lrcContent)
+                  }
+                })
+            })
+            .then(function () {
+              setDlStates(function (prev) {
+                var next = {}
+                for (var k in prev) next[k] = prev[k]
+                next[key] = 'done'
+                return next
+              })
+            })
         })
-        .catch(function () {
+        .catch(function (err) {
+          console.error('[music-get] download error:', err)
           setDlStates(function (prev) {
             var next = {}
             for (var k in prev) next[k] = prev[k]
