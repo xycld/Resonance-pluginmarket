@@ -363,8 +363,8 @@ module.exports = function (ctx) {
           }
 
           // Step 2: Fetch audio data
-          return fetch(info.audioUrl)
-            .then(function (res) { return res.arrayBuffer() })
+          return ctx.fetch(info.audioUrl)
+            .then(function (res) { return res.body })
             .then(function (audioData) {
               // Step 3: Save to plugin downloads directory
               var ext = info.format || 'mp3'
