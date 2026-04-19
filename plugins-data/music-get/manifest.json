@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "music-get",
+  "version": "1.0.0",
+  "description": "多源音乐搜索与下载",
+  "author": "EZsinging",
+  "permissions": ["storage", "network"],
+  "hooks": [],
+  "providers": [],
+  "entry": "index.js",
+  "ui_entry": "ui.js",
+  "api_version": "3.0"
+}
