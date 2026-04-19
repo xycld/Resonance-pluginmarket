@@ -158,6 +158,12 @@ module.exports = {
       ctx.data.size = urlInfo && urlInfo.size ? urlInfo.size : 0
       ctx.data.lrc = lyrics.lrc
       ctx.data.translatedLrc = lyrics.translatedLrc
+      // Pass through song metadata for sidecar import
+      ctx.data.title = song.name
+      ctx.data.artist = song.artists.join(', ')
+      ctx.data.album = song.album || ''
+      ctx.data.cover = song.cover || ''
+      ctx.data.duration = song.duration || 0
 
       await next()
     })
