@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "music-get",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "\u591a\u6e90\u97f3\u4e50\u641c\u7d22\u4e0e\u4e0b\u8f7d",
   "author": "EZsinging",
   "permissions": ["storage", "network", "fs"],
