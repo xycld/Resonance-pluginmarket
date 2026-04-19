@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_updated": "2026-04-19T09:30:23.767Z",
+  "last_updated": "2026-04-19T09:30:46.339Z",
   "plugins": [
     {
       "name": "demo-plugin",
@@ -16,7 +16,7 @@
       "download_url": "plugins-data/demo-plugin/demo-plugin-1.0.0.zip",
       "stars": 0,
       "size": 599,
-      "sha256": "cd93f6f6d131deddbfcd8b528c92a63d72a1eb9e4fe9509a958a69c56132d444",
+      "sha256": "97815d67a1b1a496a1d8969e14b7e37d5c1911c82e38db451e3ec40da9c43341",
       "providers": [],
       "entry": "index.js"
     },
@@ -36,7 +36,7 @@
       "source_repo": "https://github.com/xycld/Resonance-music-get",
       "stars": 0,
       "size": 5490,
-      "sha256": "07a9e56091b5be3e54e88d341621f086e2b0c007c19b4ffbc89994f955f13d11",
+      "sha256": "6989d364e8ea9306b824e29c210c5c4830455fca0dbd84b448fdff7b13e56456",
       "providers": [],
       "entry": "index.js",
       "ui_entry": "ui.js"
