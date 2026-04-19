@@ -3,7 +3,6 @@ module.exports = function (ctx) {
   var useState = ctx.React.useState
   var useEffect = ctx.React.useEffect
   var useRef = ctx.React.useRef
-  var useCallback = ctx.React.useCallback
   var motion = ctx.motion.motion
   var AnimatePresence = ctx.motion.AnimatePresence
 
@@ -14,11 +13,21 @@ module.exports = function (ctx) {
     { value: 'hires', label: 'Hi-Res' },
   ]
 
+  var AUDIO_EXTS = ['.mp3', '.flac', '.wav', '.m4a', '.ogg', '.aac', '.wma']
+
   function formatDuration(secs) {
     if (!secs) return '--:--'
     var m = Math.floor(secs / 60)
     var s = Math.floor(secs % 60)
     return m + ':' + (s < 10 ? '0' : '') + s
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B'
+    var k = 1024
+    var sizes = ['B', 'KB', 'MB', 'GB']
+    var i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
   }
 
   // ─── SearchBar ─────────────────────────────────────────
@@ -91,7 +100,7 @@ module.exports = function (ctx) {
   // ─── ResultCard ─────────────────────────────────────────
   function ResultCard(props) {
     var song = props.song
-    var dlState = props.dlState // 'idle' | 'loading' | 'done' | 'error'
+    var dlState = props.dlState
 
     var statusIcon = {
       idle: h(ctx.icons.Download, { size: 16 }),
@@ -128,7 +137,6 @@ module.exports = function (ctx) {
         e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'
       },
     },
-      // Cover
       h('div', {
         style: {
           width: 48, height: 48, borderRadius: '12px', flexShrink: 0,
@@ -140,7 +148,6 @@ module.exports = function (ctx) {
       },
         !song.cover && h(ctx.icons.Music, { size: 20, style: { opacity: 0.3 } })
       ),
-      // Info
       h('div', { style: { flex: 1, minWidth: 0 } },
         h('div', {
           style: {
@@ -155,14 +162,12 @@ module.exports = function (ctx) {
           },
         }, song.artists.join(', ') + (song.album ? ' · ' + song.album : ''))
       ),
-      // Duration
       h('span', {
         style: {
           color: 'rgba(255,255,255,0.3)', fontSize: '12px',
           width: '46px', textAlign: 'right', flexShrink: 0,
         },
       }, formatDuration(song.duration)),
-      // Download button
       h('button', {
         onClick: function () { if (dlState === 'idle' || dlState === 'error') props.onDownload() },
         disabled: dlState === 'loading' || dlState === 'done',
@@ -177,12 +182,54 @@ module.exports = function (ctx) {
     )
   }
 
+  // ─── DownloadedFileCard ─────────────────────────────────
+  function DownloadedFileCard(props) {
+    var file = props.file
+
+    return h(motion.div, {
+      initial: { opacity: 0, y: 8 },
+      animate: { opacity: 1, y: 0 },
+      transition: { type: 'spring', bounce: 0, duration: 0.35 },
+      style: {
+        display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '10px 14px', borderRadius: '12px',
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.04)',
+      },
+    },
+      h(ctx.icons.FileAudio, { size: 16, style: { opacity: 0.35, flexShrink: 0 } }),
+      h('div', { style: { flex: 1, minWidth: 0 } },
+        h('div', {
+          style: {
+            color: 'rgba(255,255,255,0.75)', fontSize: '13px',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          },
+        }, file.name),
+        h('div', {
+          style: { color: 'rgba(255,255,255,0.25)', fontSize: '11px', marginTop: '2px' },
+        }, formatBytes(file.size))
+      ),
+      h('button', {
+        onClick: function () { props.onDelete() },
+        style: {
+          width: 28, height: 28, borderRadius: '8px', border: 'none',
+          background: 'transparent', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'rgba(255,255,255,0.2)',
+          transition: 'all 0.2s', flexShrink: 0,
+        },
+        onMouseEnter: function (e) { e.currentTarget.style.color = '#f87171' },
+        onMouseLeave: function (e) { e.currentTarget.style.color = 'rgba(255,255,255,0.2)' },
+      }, h(ctx.icons.Trash2, { size: 13 }))
+    )
+  }
+
   // ─── QrLoginModal ──────────────────────────────────────
   function QrLoginModal(props) {
     var sessionState = useState(null)
     var session = sessionState[0]
     var setSession = sessionState[1]
-    var statusState = useState('idle') // 'idle' | 'loading' | 'waiting' | 'scanned' | 'success' | 'expired' | 'error'
+    var statusState = useState('idle')
     var status = statusState[0]
     var setStatus = statusState[1]
     var pollRef = useRef(null)
@@ -204,7 +251,6 @@ module.exports = function (ctx) {
         var s = res.data.session
         setSession(s)
         setStatus('waiting')
-        // Start polling
         pollRef.current = setInterval(function () {
           ctx.hooks.dispatch('musicGet:pollQrLogin', { session: s }).then(function (res) {
             var result = res.data.result
@@ -258,7 +304,6 @@ module.exports = function (ctx) {
       title: '网易云音乐扫码登录',
     },
       h('div', { style: { padding: '8px 0' } },
-        // QR display area
         h('div', {
           style: {
             width: '100%', aspectRatio: '1', maxWidth: '240px', margin: '0 auto 16px',
@@ -281,14 +326,12 @@ module.exports = function (ctx) {
                 }, session.qrUrl)
               : h(ctx.icons.QrCode, { size: 48, style: { opacity: 0.15 } })
         ),
-        // Status
         h('div', {
           style: {
             textAlign: 'center', fontSize: '13px', marginBottom: '16px',
             color: statusColors[status] || 'rgba(255,255,255,0.5)',
           },
         }, statusLabels[status] || ''),
-        // Action button
         h('button', {
           onClick: startLogin,
           disabled: status === 'loading' || status === 'waiting' || status === 'scanned',
@@ -324,7 +367,65 @@ module.exports = function (ctx) {
     var qrOpenState = useState(false)
     var qrOpen = qrOpenState[0]
     var setQrOpen = qrOpenState[1]
-    var settingsStore = ctx.stores.useSettingsStore
+    var downloadsState = useState([])
+    var downloads = downloadsState[0]
+    var setDownloads = downloadsState[1]
+    var dlLoadingState = useState(false)
+    var dlLoading = dlLoadingState[0]
+    var setDlLoading = dlLoadingState[1]
+
+    // Load downloaded files on mount
+    useEffect(function () {
+      loadDownloads()
+    }, [])
+
+    function loadDownloads() {
+      setDlLoading(true)
+      ctx.fs.exists('downloads').then(function (exists) {
+        if (!exists) {
+          setDownloads([])
+          setDlLoading(false)
+          return
+        }
+        return ctx.fs.readDir('downloads').then(function (files) {
+          var audioFiles = []
+          var promises = []
+          files.forEach(function (name) {
+            var isAudio = AUDIO_EXTS.some(function (ext) {
+              return name.toLowerCase().endsWith(ext)
+            })
+            if (isAudio) {
+              promises.push(
+                ctx.fs.stat('downloads/' + name).then(function (s) {
+                  audioFiles.push({ name: name, size: s.size })
+                }).catch(function () {
+                  audioFiles.push({ name: name, size: 0 })
+                })
+              )
+            }
+          })
+          return Promise.all(promises).then(function () {
+            audioFiles.sort(function (a, b) { return b.name.localeCompare(a.name) })
+            setDownloads(audioFiles)
+          })
+        })
+      }).catch(function () {
+        setDownloads([])
+      }).finally(function () {
+        setDlLoading(false)
+      })
+    }
+
+    function deleteDownload(file) {
+      ctx.fs.remove('downloads/' + file.name).then(function () {
+        // Also remove lyrics if exists
+        var base = file.name.replace(/\.[^.]+$/, '')
+        ctx.fs.remove('downloads/' + base + '.lrc').catch(function () {})
+        loadDownloads()
+      }).catch(function (err) {
+        console.error('[music-get] delete error:', err)
+      })
+    }
 
     function doSearch() {
       if (!keyword.trim() || loading) return
@@ -334,7 +435,6 @@ module.exports = function (ctx) {
       ctx.hooks.dispatch('musicGet:search', { keyword: keyword.trim(), limit: 20 })
         .then(function (result) {
           var res = result.data.results || []
-          // Flatten results from all providers
           var allSongs = []
           res.forEach(function (r) {
             r.songs.forEach(function (s) { allSongs.push(s) })
@@ -354,7 +454,11 @@ module.exports = function (ctx) {
         return next
       })
 
-      // Step 1: Get download info from backend
+      var toast = null
+      if (ctx.toast) {
+        toast = ctx.toast.progress('正在下载：' + song.name)
+      }
+
       ctx.hooks.dispatch('musicGet:download', { song: song, quality: quality })
         .then(function (result) {
           var info = result.data
@@ -362,32 +466,60 @@ module.exports = function (ctx) {
             throw new Error('No audio URL available')
           }
 
-          // Step 2: Fetch audio data
-          return ctx.fetch(info.audioUrl)
+          var ext = info.format || 'mp3'
+          var safeName = song.name.replace(/[\\/:*?"<>|]/g, '_').trim()
+          var safeArtist = song.artists.join(', ').replace(/[\\/:*?"<>|]/g, '_').trim()
+          var filename = safeName + ' - ' + safeArtist + '.' + ext
+
+          return ctx.fs.mkdir('downloads')
+            .catch(function () {})
+            .then(function () {
+              // Fetch with progress
+              return ctx.fetch(info.audioUrl, undefined, function (loaded, total) {
+                if (toast && total > 0) {
+                  var pct = Math.round((loaded / total) * 100)
+                  toast.update(pct)
+                }
+              })
+            })
             .then(function (res) { return res.body })
             .then(function (audioData) {
-              // Step 3: Save to plugin downloads directory
-              var ext = info.format || 'mp3'
-              var safeName = song.name.replace(/[\\/:*?"<>|]/g, '_').trim()
-              var safeArtist = song.artists.join(', ').replace(/[\\/:*?"<>|]/g, '_').trim()
-              var filename = safeName + ' - ' + safeArtist + '.' + ext
-
-              return ctx.fs.mkdir('downloads')
-                .catch(function () { /* dir may already exist */ })
-                .then(function () {
-                  return ctx.fs.writeFile('downloads/' + filename, new Uint8Array(audioData))
-                })
-                .then(function () {
-                  // Step 4: Save lyrics if available
+              return ctx.fs.writeFile('downloads/' + filename, new Uint8Array(audioData))
+            })
+            .then(function () {
+              if (info.lrc) {
+                var lrcFilename = safeName + ' - ' + safeArtist + '.lrc'
+                var lrcContent = info.lrc
+                if (info.translatedLrc) {
+                  lrcContent += '\n\n' + info.translatedLrc
+                }
+                return ctx.fs.writeFile('downloads/' + lrcFilename, lrcContent)
+              }
+            })
+            .then(function () {
+              // Import downloaded files into app library
+              if (ctx.library.importToLibrary) {
+                var filesToImport = [{ relativePath: 'downloads/' + filename, type: 'audio' }]
+                if (info.lrc) {
+                  filesToImport.push({ relativePath: 'downloads/' + safeName + ' - ' + safeArtist + '.lrc', type: 'lyrics' })
+                }
+                // Build metadata sidecar for accurate library display
+                var metadata = {}
+                metadata[filename] = {
+                  title: song.name,
+                  artist: song.artists.join(', '),
+                  album: song.album || '',
+                  cover: song.cover || '',
+                  duration: song.duration ? formatDuration(song.duration) : '',
+                }
+                return ctx.library.importToLibrary(filesToImport, metadata).then(function () {
+                  // Clean up plugin directory copies after import
+                  ctx.fs.remove('downloads/' + filename).catch(function () {})
                   if (info.lrc) {
-                    var lrcFilename = safeName + ' - ' + safeArtist + '.lrc'
-                    var lrcContent = info.lrc
-                    if (info.translatedLrc) {
-                      lrcContent += '\n\n' + info.translatedLrc
-                    }
-                    return ctx.fs.writeFile('downloads/' + lrcFilename, lrcContent)
+                    ctx.fs.remove('downloads/' + safeName + ' - ' + safeArtist + '.lrc').catch(function () {})
                   }
                 })
+              }
             })
             .then(function () {
               setDlStates(function (prev) {
@@ -396,6 +528,8 @@ module.exports = function (ctx) {
                 next[key] = 'done'
                 return next
               })
+              if (toast) toast.success('下载完成：' + song.name)
+              loadDownloads()
             })
         })
         .catch(function (err) {
@@ -406,16 +540,19 @@ module.exports = function (ctx) {
             next[key] = 'error'
             return next
           })
+          if (toast) toast.error('下载失败：' + song.name)
         })
     }
 
     var hasResults = results.length > 0
+    var hasDownloads = downloads.length > 0
 
     return h('div', {
       style: {
         width: '100%', maxWidth: '800px', margin: '0 auto',
         padding: '100px 20px 40px', minHeight: '100vh',
         display: 'flex', flexDirection: 'column', gap: '16px',
+        overflow: 'auto',
       },
     },
       // Title bar
@@ -475,7 +612,7 @@ module.exports = function (ctx) {
         })
       ),
       // Empty state
-      !hasResults && !loading && h('div', {
+      !hasResults && !loading && !hasDownloads && h('div', {
         style: {
           flex: 1, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
@@ -498,6 +635,58 @@ module.exports = function (ctx) {
           size: 32,
           style: { opacity: 0.4, animation: 'mg-spin 1s linear infinite' },
         })
+      ),
+      // Downloaded files section
+      hasDownloads && h('div', {
+        style: {
+          marginTop: '24px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.05)',
+        },
+      },
+        h('div', {
+          style: {
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: '10px', padding: '0 2px',
+          },
+        },
+          h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+            h(ctx.icons.Download, { size: 14, style: { opacity: 0.4 } }),
+            h('span', { style: { fontSize: '13px', color: 'rgba(255,255,255,0.6)', fontWeight: 500 } },
+              '已下载'
+            ),
+            h('span', { style: { fontSize: '11px', color: 'rgba(255,255,255,0.25)' } },
+              '(' + downloads.length + ')'
+            )
+          ),
+          h('button', {
+            onClick: loadDownloads,
+            disabled: dlLoading,
+            style: {
+              display: 'flex', alignItems: 'center', gap: '4px',
+              fontSize: '11px', color: 'rgba(255,255,255,0.3)',
+              background: 'none', border: 'none', cursor: dlLoading ? 'wait' : 'pointer',
+              padding: '4px 8px', borderRadius: '6px',
+              transition: 'all 0.2s',
+            },
+            onMouseEnter: function (e) { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' },
+            onMouseLeave: function (e) { e.currentTarget.style.color = 'rgba(255,255,255,0.3)' },
+          },
+            h(ctx.icons.RotateCw, { size: 11, style: { animation: dlLoading ? 'mg-spin 1s linear infinite' : 'none' } }),
+            '刷新'
+          )
+        ),
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+          downloads.map(function (file) {
+            return h(DownloadedFileCard, {
+              key: file.name,
+              file: file,
+              onDelete: function () { deleteDownload(file) },
+            })
+          })
+        )
       ),
       // QR modal
       h(QrLoginModal, { open: qrOpen, onClose: function () { setQrOpen(false) } })
