@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_updated": "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)",
+  "last_updated": "2026-04-19T19:27:18.865Z",
   "plugins": [
     {
       "name": "demo-plugin",
@@ -16,7 +16,7 @@
       "download_url": "plugins-data/demo-plugin/demo-plugin-1.0.0.zip",
       "stars": 0,
       "size": 599,
-      "sha256": "19095b52732b430ffc1d94b58de9068b2ef678e1fa53631d163c4de91c0a72a7",
+      "sha256": "04487e631c7472a67c58c3af9d7124d21fb846cfae3fdd81db423e2e7bd645fc",
       "providers": [],
       "entry": "index.js"
     },
@@ -33,11 +33,11 @@
       "hooks": [],
       "api_version": "3.0",
       "has_ui": true,
-      "download_url": "plugins-data/music-get/music-get-1.0.0.zip",
+      "download_url": "plugins-data/music-get/music-get-1.0.1.zip",
       "source_repo": "https://github.com/xycld/Resonance-music-get",
       "stars": 0,
-      "size": 7401,
-      "sha256": "8bd806e10a5946a5962a2e9e5362fa9c528c09bcc2878f3a4dc5440e4f8a9d55",
+      "size": 24468,
+      "sha256": "bf7a640ad4e53968deea599825e45276f48f669f784432523844ef9ce338b306",
       "providers": [],
       "entry": "index.js",
       "ui_entry": "ui.js"
