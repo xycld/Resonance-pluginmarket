@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_updated": "2026-04-19T13:05:20.459Z",
+  "last_updated": "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)",
   "plugins": [
     {
       "name": "demo-plugin",
@@ -22,7 +22,7 @@
     },
     {
       "name": "music-get",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "多源音乐搜索与下载",
       "author": "EZsinging",
       "permissions": [
@@ -36,8 +36,8 @@
       "download_url": "plugins-data/music-get/music-get-1.0.0.zip",
       "source_repo": "https://github.com/xycld/Resonance-music-get",
       "stars": 0,
-      "size": 9688,
-      "sha256": "fd9234b228d743f194a40d5fa98e840c188403318e8d4ba5d049a127dbdf98e0",
+      "size": 7401,
+      "sha256": "8bd806e10a5946a5962a2e9e5362fa9c528c09bcc2878f3a4dc5440e4f8a9d55",
       "providers": [],
       "entry": "index.js",
       "ui_entry": "ui.js"
