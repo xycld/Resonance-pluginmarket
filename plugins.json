@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "last_updated": "2026-04-19T09:29:56.187Z",
+  "plugins": [
+    {
+      "name": "demo-plugin",
+      "version": "1.0.0",
+      "description": "A demo plugin",
+      "author": "Demo Author",
+      "permissions": [
+        "network"
+      ],
+      "hooks": [],
+      "api_version": "3.0",
+      "has_ui": false,
+      "download_url": "plugins-data/demo-plugin/demo-plugin-1.0.0.zip",
+      "stars": 0,
+      "size": 595,
+      "sha256": "640c6412fbcd45c445c9448deeebfa92a1bd8a78bfd1bc25f0f610bd118e9ab4",
+      "providers": [],
+      "entry": "index.js"
+    },
+    {
+      "name": "music-get",
+      "version": "1.0.0",
+      "description": "多源音乐搜索与下载",
+      "author": "EZsinging",
+      "permissions": [
+        "storage",
+        "network"
+      ],
+      "hooks": [],
+      "api_version": "3.0",
+      "has_ui": true,
+      "download_url": "plugins-data/music-get/music-get-1.0.0.zip",
+      "source_repo": "https://github.com/xycld/Resonance-music-get",
+      "stars": 0,
+      "size": 5456,
+      "sha256": "801cf02c8e2097bf38c924fc9e0e5c7295f80b4ca888a6b11c9a4921fe9125f8",
+      "providers": [],
+      "entry": "index.js",
+      "ui_entry": "ui.js"
+    }
+  ]
+}
